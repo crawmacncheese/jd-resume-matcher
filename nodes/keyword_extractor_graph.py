@@ -8,6 +8,7 @@ from nodes.comprehensive_checker import comprehensive_checker
 from nodes.keywords_extractor import keywords_extractor
 from nodes.keywords_merger import keywords_merger
 from nodes.modifier import modifier
+from nodes.phase2_keywords_merger import phase2_keywords_merger
 from nodes.preprocessor import preprocessor
 from nodes.supplementary_extractor import supplementary_extractor
 from nodes.validator import validator
@@ -68,6 +69,7 @@ def build_phase2_graph() -> StateGraph:
 
     workflow.add_node("validator", validator)
     workflow.add_node("modifier", modifier)
+    workflow.add_node("phase2_keywords_merger", phase2_keywords_merger)
 
     workflow.set_entry_point("validator")
     workflow.add_conditional_edges(
@@ -78,7 +80,8 @@ def build_phase2_graph() -> StateGraph:
             "end": END,
         },
     )
-    workflow.add_edge("modifier", "validator")
+    workflow.add_edge("modifier", "phase2_keywords_merger")
+    workflow.add_edge("phase2_keywords_merger", "validator")
 
     return workflow
 
@@ -95,6 +98,7 @@ def build_extractor_graph() -> StateGraph:
     workflow.add_node("finalize_phase1", finalize_phase1)
     workflow.add_node("validator", validator)
     workflow.add_node("modifier", modifier)
+    workflow.add_node("phase2_keywords_merger", phase2_keywords_merger)
 
     workflow.set_entry_point("preprocessor")
     workflow.add_edge("preprocessor", "keywords_extractor")
@@ -118,7 +122,8 @@ def build_extractor_graph() -> StateGraph:
             "end": END,
         },
     )
-    workflow.add_edge("modifier", "validator")
+    workflow.add_edge("modifier", "phase2_keywords_merger")
+    workflow.add_edge("phase2_keywords_merger", "validator")
 
     return workflow
 

@@ -60,7 +60,7 @@ done
 
 # Create __init__.py files in Python package folders
 echo "Creating __init__.py files..."
-python_packages=("models" "nodes" "utils")
+python_packages=("matcher" "models" "nodes" "utils")
 for package in "${python_packages[@]}"; do
     if [ -d "$DIST_DIR/$package" ]; then
         touch "$DIST_DIR/$package/__init__.py"

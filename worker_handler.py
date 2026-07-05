@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 from utils.hash import calculate_hash
 from utils.s3_cloudfront import get_cached_data, store_in_s3, json_dumps_decimal
 from utils.decimal import convert_floats_to_decimal
+from matcher.matcher import run_matcher
 from nodes.keyword_extractor_graph import run_extractor
 
 # Initialize AWS clients
@@ -100,6 +101,31 @@ def _skill_to_dict(sk) -> Dict[str, Any]:
     }
 
 
+def _match_to_dict(match) -> Dict[str, Any]:
+    return {
+        "precision": match.precision,
+        "recall": match.recall,
+        "f1": match.f1,
+        "is_match": match.is_match,
+        "jd_skill_count": match.jd_skill_count,
+        "resume_skill_count": match.resume_skill_count,
+        "matched_count": match.matched_count,
+        "matched": [
+            {
+                "jd_skill": _skill_to_dict(pair.jd_skill),
+                "resume_skill": _skill_to_dict(pair.resume_skill),
+                "similarity": pair.similarity,
+                "meets_yoe": pair.meets_yoe,
+            }
+            for pair in match.matched
+        ],
+        "missing_from_resume": [
+            _skill_to_dict(skill) for skill in match.missing_from_resume
+        ],
+        "extra_on_resume": [_skill_to_dict(skill) for skill in match.extra_on_resume],
+    }
+
+
 def process_job(job_id: str, payload: Any) -> Dict[str, Any]:
     """Process the job: run Phase 1 and Phase 2 for resume and JD, then compute matching score."""
     print(f"Processing job {job_id} with payload: {payload}")
@@ -146,7 +172,13 @@ def process_job(job_id: str, payload: Any) -> Dict[str, Any]:
     resume_state = run_extractor(resume_text, document_type="resume")
 
 
-    # TODO: Output matching results
+    print(f"Running Matcher...")
+    match_result = run_matcher(
+        jd_state.datapoints.skills,
+        resume_state.datapoints.skills,
+        match_threshold=MATCH_THRESHOLD,
+    )
+
     processed_result = {
         "cache_key": cache_key,
         "source": "processor",
@@ -159,8 +191,7 @@ def process_job(job_id: str, payload: Any) -> Dict[str, Any]:
                 _skill_to_dict(skill) for skill in resume_state.datapoints.skills
             ],
         },
-        "matching": {
-        },
+        "matching": _match_to_dict(match_result),
         "processed_at": datetime.now(timezone.utc).isoformat(),
     }
 

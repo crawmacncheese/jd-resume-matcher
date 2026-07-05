@@ -4,10 +4,12 @@ flowchart LR
     Validator["Validator"]:::step
     GateValid{Valid?}:::gate
     Modifier["Modifier"]:::step
+    Merge2["Keywords Merger (Phase 2)"]:::step
     End([End]):::step
 
     Start --> Validator
     Validator --> GateValid
     GateValid -- No --> Modifier
-    Modifier -- "modified keywords" --> Validator
+    Modifier -- "modified keywords" --> Merge2
+    Merge2 -- "merged keywords" --> Validator
     GateValid -- Yes --> End
